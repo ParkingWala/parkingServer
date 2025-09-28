@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: parking-backend
+    env: docker
+    plan: free
+    branch: main
+    autoDeploy: true
+    buildCommand: ""          # Dockerfile handles build
+    startCommand: ""          # Dockerfile handles run
+    healthCheckPath: "/actuator/health"
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: PHONEPE_CLIENT_ID
+        value: SU250917979468
+      - key: PHONEPE_CLIENT_SECRET
+        value: e4e2904621b5e66f6
+      - key: PHONEPE_CLIENT_VERSION
+        value: 1
+      - key: PHONEPE_PROD_TOKEN_URL
+        value: https://api.phonepe.com/apis/identity-manager/v1/oauth/token
+      - key: PHONEPE_PROD_ORDER_URL
+        value: https://api.phonepe.com/apis/pg/checkout/v2/sdk/order
+      - key: PHONEPE_PROD_STATUS_URL
+        value: https://api.phonepe.com/apis/pg/checkout/v2/order
+
+      - key: SPRING_DATASOURCE_URL
+        value: jdbc:mysql://username:password@hostname:3306/parkingdb?useSSL=false&serverTimezone=Asia/Kolkata
+      - key: SPRING_DATASOURCE_USERNAME
+        value: username
+      - key: SPRING_DATASOURCE_PASSWORD
+        value: password
