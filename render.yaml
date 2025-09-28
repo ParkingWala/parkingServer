@@ -25,8 +25,8 @@ services:
         value: https://api.phonepe.com/apis/pg/checkout/v2/order
 
       - key: SPRING_DATASOURCE_URL
-        value: jdbc:mysql://username:password@hostname:3306/parkingdb?useSSL=false&serverTimezone=Asia/Kolkata
+        value: postgresql://parkingdb_gcgw_user:bQElmzgYaA0XlPGLm24fybIV9xjaD9MX@dpg-d36g4j2dbo4c73dq9g10-a/parkingdb_gcgw
       - key: SPRING_DATASOURCE_USERNAME
-        value: username
+        value: parkingdb_gcgw_user
       - key: SPRING_DATASOURCE_PASSWORD
-        value: password
+        value: bQElmzgYaA0XlPGLm24fybIV9xjaD9MX
