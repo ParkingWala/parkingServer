@@ -11,6 +11,8 @@ services:
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
+
+      # PhonePe Production
       - key: PHONEPE_CLIENT_ID
         value: SU250917979468
       - key: PHONEPE_CLIENT_SECRET
@@ -24,8 +26,9 @@ services:
       - key: PHONEPE_PROD_STATUS_URL
         value: https://api.phonepe.com/apis/pg/checkout/v2/order
 
+      # PostgreSQL Database (Render PostgreSQL service)
       - key: SPRING_DATASOURCE_URL
-        value: postgresql://parkingdb_gcgw_user:bQElmzgYaA0XlPGLm24fybIV9xjaD9MX@dpg-d36g4j2dbo4c73dq9g10-a/parkingdb_gcgw
+        value: jdbc:postgresql://dpg-d36g4j2dbo4c73dq9g10-a/parkingdb_gcgw?user=parkingdb_gcgw_user&password=bQElmzgYaA0XlPGLm24fybIV9xjaD9MX
       - key: SPRING_DATASOURCE_USERNAME
         value: parkingdb_gcgw_user
       - key: SPRING_DATASOURCE_PASSWORD
