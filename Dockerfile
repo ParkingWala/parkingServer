@@ -6,18 +6,18 @@ WORKDIR /app
 COPY pom.xml .
 COPY src ./src
 
-# Build the Spring Boot jar (skip tests for faster builds)
+# Build the project (skip tests to speed up)
 RUN mvn clean package -DskipTests
 
 # -------- Run Stage --------
 FROM eclipse-temurin:17-jdk-alpine
 WORKDIR /app
 
-# Copy the built jar from build stage
+# Copy built jar from build stage
 COPY --from=build /app/target/*.jar app.jar
 
-# Expose default Spring Boot port
+# Expose port 8080
 EXPOSE 8080
 
-# Use JAVA_OPTS if provided
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+# Run the Spring Boot app
+ENTRYPOINT ["java","-jar","app.jar"]
