@@ -39,24 +39,26 @@ public class PhonePeService {
                           @Value("${phonepe.client-secret:}") String clientSecret,
                           @Value("${phonepe.client-version:1}") String clientVersion) {
 
-        // Environment variables override everything
+        // Allow environment variables to override properties
         this.tokenUrl = env.getProperty("PHONEPE_TOKEN_URL",
-                env.getProperty("phonepe.production.token-url",
-                        env.getProperty("phonepe.sandbox.token-url", "https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token")));
+                env.getProperty("phonepe.token-url", "https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token"));
 
         this.orderUrl = env.getProperty("PHONEPE_ORDER_URL",
-                env.getProperty("phonepe.production.order-url",
-                        env.getProperty("phonepe.sandbox.order-url", "https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/sdk/order")));
+                env.getProperty("phonepe.order-url", "https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/sdk/order"));
 
         this.statusUrl = env.getProperty("PHONEPE_STATUS_URL",
-                env.getProperty("phonepe.production.status-url",
-                        env.getProperty("phonepe.sandbox.status-url", "https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/order")));
+                env.getProperty("phonepe.status-url", "https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/order"));
 
         this.clientId = clientId;
         this.clientSecret = clientSecret;
         this.clientVersion = clientVersion;
+
+        log.info("PhonePeService initialized with clientId: {}", clientId);
     }
 
+    /**
+     * Generate OAuth token from PhonePe
+     */
     public AuthTokenResponse generateAuthToken() {
         if (clientId.isEmpty() || clientSecret.isEmpty()) {
             log.warn("PhonePe clientId or clientSecret is missing, cannot generate token");
@@ -71,13 +73,11 @@ public class PhonePeService {
                 "&client_secret=" + clientSecret +
                 "&grant_type=client_credentials";
 
-        HttpEntity<String> entity = new HttpEntity<>(body, headers);
-
         try {
             ResponseEntity<AuthTokenResponse> response = restTemplate.exchange(
                     URI.create(tokenUrl),
                     HttpMethod.POST,
-                    entity,
+                    new HttpEntity<>(body, headers),
                     AuthTokenResponse.class
             );
 
@@ -92,18 +92,29 @@ public class PhonePeService {
             return tokenResponse;
 
         } catch (Exception e) {
-            log.error("Failed to generate PhonePe token", e);
+            log.error("Failed to generate PhonePe token: {}", e.getMessage());
             return null;
         }
     }
 
+    /**
+     * Create a new order
+     */
     public CreateOrderResponse createOrder(CreateOrderRequest req) {
         ensureTokenValid();
-        if (cachedToken == null) return new CreateOrderResponse();
+        if (cachedToken == null) {
+            log.warn("Skipping createOrder because token is not available");
+            return new CreateOrderResponse();
+        }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", "O-Bearer " + cachedToken);
+
+        // Default to PG_CHECKOUT if flow not provided
+        if (req.getPaymentFlow() == null || req.getPaymentFlow().getType() == null) {
+            req.setPaymentFlow(new CreateOrderRequest.PaymentFlow("PG_CHECKOUT"));
+        }
 
         try {
             ResponseEntity<CreateOrderResponse> response = restTemplate.exchange(
@@ -112,22 +123,27 @@ public class PhonePeService {
                     new HttpEntity<>(req, headers),
                     CreateOrderResponse.class
             );
-
-            CreateOrderResponse res = response.getBody();
-            return res != null ? res : new CreateOrderResponse();
+            return response.getBody() != null ? response.getBody() : new CreateOrderResponse();
 
         } catch (HttpServerErrorException | HttpClientErrorException e) {
-            log.warn("PhonePe server error during create order: {} {}", e.getStatusCode(), e.getResponseBodyAsString());
+            log.warn("PhonePe server error during createOrder: {} {}", e.getStatusCode(), e.getResponseBodyAsString());
             return new CreateOrderResponse();
+
         } catch (Exception e) {
             log.error("Unexpected error while creating order: {}", e.getMessage());
             return new CreateOrderResponse();
         }
     }
 
+    /**
+     * Check order status
+     */
     public OrderStatusResponse checkStatus(String merchantOrderId) {
         ensureTokenValid();
-        if (cachedToken == null) return defaultUnknownStatus(merchantOrderId);
+        if (cachedToken == null) {
+            log.warn("Skipping checkStatus because token is not available");
+            return defaultUnknownStatus(merchantOrderId);
+        }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -154,14 +170,14 @@ public class PhonePeService {
         }
     }
 
+    /**
+     * Ensure we always return a usable status object
+     */
     private OrderStatusResponse sanitizeStatus(OrderStatusResponse status, String merchantOrderId) {
         if (status == null) return defaultUnknownStatus(merchantOrderId);
         if (status.getOrderId() == null) status.setOrderId(merchantOrderId);
         if (status.getState() == null) status.setState("UNKNOWN");
         if (status.getPaymentDetails() == null) status.setPaymentDetails(Collections.emptyList());
-        if (status.getAmount() == null) status.setAmount(null);
-        if (status.getExpireAt() == null) status.setExpireAt(null);
-        if (status.getErrorContext() == null) status.setErrorContext(null);
         return status;
     }
 
@@ -170,12 +186,12 @@ public class PhonePeService {
         unknown.setOrderId(merchantOrderId);
         unknown.setState("UNKNOWN");
         unknown.setPaymentDetails(Collections.emptyList());
-        unknown.setAmount(null);
-        unknown.setExpireAt(null);
-        unknown.setErrorContext(null);
         return unknown;
     }
 
+    /**
+     * Refresh token if missing or expired
+     */
     private void ensureTokenValid() {
         if (cachedToken == null || (tokenExpiry != null && System.currentTimeMillis() / 1000 >= tokenExpiry)) {
             generateAuthToken();

@@ -14,5 +14,20 @@ public class CreateOrderRequest {
     @Data
     public static class PaymentFlow {
         private String type;
+
+        public PaymentFlow() {
+        }
+
+        public PaymentFlow(String type) {
+            this.type = type;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
     }
 }
