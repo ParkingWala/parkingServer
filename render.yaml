@@ -5,8 +5,8 @@ services:
     plan: free
     branch: main
     autoDeploy: true
-    buildCommand: ""          # Dockerfile handles build
-    startCommand: ""          # Dockerfile handles run
+    buildCommand: ""   # Dockerfile builds the project
+    startCommand: ""   # Dockerfile handles runtime
     healthCheckPath: "/actuator/health"
     envVars:
       - key: SPRING_PROFILES_ACTIVE
