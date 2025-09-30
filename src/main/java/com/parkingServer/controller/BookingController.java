@@ -7,6 +7,9 @@ import com.parkingServer.service.BookingService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/slots")
 public class BookingController {
@@ -24,5 +27,11 @@ public class BookingController {
         res.setBookingId(b.getBookingId());
         res.setStatus(b.getStatus());
         return ResponseEntity.ok(res);
+    }
+
+
+    @GetMapping("/all")
+    public ResponseEntity<List<Booking>> getAllBookings() {
+        return ResponseEntity.ok(bookingService.getAllBookings());
     }
 }

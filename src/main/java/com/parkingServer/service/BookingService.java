@@ -6,6 +6,7 @@ import com.parkingServer.repository.BookingRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -27,4 +28,8 @@ public class BookingService {
         b.setCreatedAt(Instant.now());
         return bookingRepository.save(b);
     }
+    public List<Booking> getAllBookings() {
+        return bookingRepository.findAll();
+    }
+
 }
